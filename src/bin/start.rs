@@ -29,6 +29,7 @@ async fn handle_root() -> &'static str {
     "Hello RustAU!"
 }
 
+// HTTP GET /fn/:name        curl localhost:8080/fn/hello
 async fn handle_fn_execute(State(state): State<AppState>, Path(name): Path<String>) -> String {
     info!("invoking stored function: \"{name}\"");
 
@@ -40,6 +41,7 @@ async fn handle_fn_execute(State(state): State<AppState>, Path(name): Path<Strin
     unimplemented!();
 }
 
+// HTTP POST /fn/:name        curl -d @fn.js localhost:8080/fn/hello
 async fn handle_fn_submit(State(state): State<AppState>, Path(name): Path<String>, body: String) {
     info!("adding new function: \"{name}\"");
 
@@ -57,7 +59,6 @@ async fn handle_fn_submit(State(state): State<AppState>, Path(name): Path<String
     Deno Ops
 */
 
-#[op]
 fn op_log() {}
 
 #[op]
