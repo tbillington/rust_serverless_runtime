@@ -56,7 +56,7 @@ async fn handle_fn_execute(
 
     info!("invoking stored fn: {}", &name);
 
-    Ok(run_js(&name, &fn_body, db)?)
+    run_js(&name, &fn_body, db)
 }
 
 #[op]
