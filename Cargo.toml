@@ -3,8 +3,6 @@ name = "serverless"
 version = "0.1.0"
 edition = "2021"
 
-default-run = "serverless"
-
 [dependencies]
 # v8 wrapper
 deno_core = "0.149.0"
