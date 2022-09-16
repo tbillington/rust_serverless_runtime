@@ -54,7 +54,7 @@ async fn handle_fn_execute(
         .cloned()
         .ok_or_else(|| AppError::UnknownFunction(name.clone()))?;
 
-    info!("invoking stored fn: {}", &name);
+    info!("invoking stored fn: {name}");
 
     run_js(&name, &fn_body, db)
 }
@@ -67,13 +67,14 @@ fn op_log(state: &mut OpState, msg: String) {
 
 #[op]
 fn op_kv_set(state: &mut OpState, key: String, value: String) -> Result<(), AnyError> {
-    state
+    let db = state
         .borrow_mut::<DB>()
         .lock()
         // the error from a poisoned lock can't be sent between threads
         // so we take it's msg contents and wrap them in an error that is Send
-        .map_err(|err| AnyError::msg(err.to_string()))?
-        .execute("replace into kv (key, value) values (?1, ?2)", [key, value])?;
+        .map_err(|err| AnyError::msg(err.to_string()))?;
+
+    db.execute("replace into kv (key, value) values (?1, ?2)", [key, value])?;
 
     Ok(())
 }
@@ -125,7 +126,7 @@ fn run_js(name: &str, body: &str, db: DB) -> Result<String, AppError> {
     let local = v8::Local::new(scope, last_value);
     let deserialized_value = serde_v8::from_v8::<serde_json::Value>(scope, local)?;
 
-    info!("result from \"{name}\": {:#?}", deserialized_value);
+    info!("result from \"{name}\": {deserialized_value:#?}");
 
     Ok(deserialized_value.to_string())
 }
@@ -146,7 +147,7 @@ async fn main() {
         .route("/fn/:name", get(handle_fn_execute).post(handle_fn_submit));
 
     let addr = std::net::SocketAddr::from((std::net::Ipv4Addr::UNSPECIFIED, 8080));
-    info!("listening on {}", addr);
+    info!("listening on {addr}");
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await
@@ -155,23 +156,11 @@ async fn main() {
 
 /// Register logging provider and emit to stdout anything matching INFO or above
 fn register_trace_stdout_listener() {
-    tracing_subscriber::registry()
-        .with(
-            tracing_subscriber::fmt::layer()
-                .event_format(
-                    tracing_subscriber::fmt::format()
-                        .with_timer(tracing_subscriber::fmt::time::UtcTime::new(
-                            time::format_description::parse("[hour]:[minute]:[second]").unwrap(),
-                        ))
-                        .compact(),
-                )
-                .with_filter(
-                    tracing_subscriber::EnvFilter::builder()
-                        .with_default_directive(tracing::metadata::LevelFilter::INFO.into())
-                        .from_env_lossy(),
-                ),
-        )
-        .init();
+    let env_filter = tracing_subscriber::EnvFilter::builder()
+        .with_default_directive(tracing::metadata::LevelFilter::INFO.into())
+        .from_env_lossy();
+    let filter_layer = tracing_subscriber::fmt::layer().with_filter(env_filter);
+    tracing_subscriber::registry().with(filter_layer).init();
 }
 
 /// Type for all errors that can bubble up to the http level
@@ -193,8 +182,8 @@ impl IntoResponse for AppError {
             AppError::JsError(js_error) => {
                 format!("error evaluating function: {js_error}").into_response()
             }
-            AppError::UnknownFunction(e) => {
-                (StatusCode::BAD_REQUEST, format!("unknown function: {e}")).into_response()
+            AppError::UnknownFunction(name) => {
+                (StatusCode::BAD_REQUEST, format!("unknown function: {name}")).into_response()
             }
             err => {
                 error!("internal error: {err:?}");

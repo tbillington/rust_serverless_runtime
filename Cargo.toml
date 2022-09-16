@@ -18,5 +18,3 @@ axum = "0.6.0-rc.1"
 tracing = "0.1.36"
 # traces to stdout
 tracing-subscriber = { version = "0.3.15", features = ["env-filter", "local-time", "time"] }
-# log time formatting
-time = { version = "0.3.14", features = ["formatting"] }

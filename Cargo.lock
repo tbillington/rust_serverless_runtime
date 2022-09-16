@@ -827,7 +827,6 @@ dependencies = [
  "deno_core",
  "rusqlite",
  "serde",
- "time",
  "tokio",
  "tracing",
  "tracing-subscriber",
