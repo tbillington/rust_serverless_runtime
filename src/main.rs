@@ -61,7 +61,7 @@ async fn handle_fn_execute(
 
 #[op]
 fn op_log(state: &mut OpState, msg: String) {
-    // emit the log message prefixed with the name of the functino
+    // emit the log message prefixed with the name of the function
     info!("[{}]: {}", state.borrow::<String>(), msg);
 }
 
@@ -114,7 +114,7 @@ fn run_js(name: &str, body: &str, db: DB) -> Result<String, AppError> {
 
     let state = runtime.op_state();
 
-    // inject the name of the function and access to the DB so ops can access
+    // inject the name of the function and access to the DB so ops have access
     state.borrow_mut().put::<String>(name.to_owned());
     state.borrow_mut().put(db);
 
